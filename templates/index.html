@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marks Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-card-3d {
+            transform: perspective(1000px) rotateX(0deg);
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                inset 0 0 32px 0 rgba(59, 130, 246, 0.1);
+        }
+
+        .glass-card-3d:hover {
+            transform: perspective(1000px) rotateX(5deg) translateY(-5px);
+            box-shadow:
+                0 12px 40px 0 rgba(0, 0, 0, 0.45),
+                inset 0 0 32px 0 rgba(59, 130, 246, 0.2);
+        }
+
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'slideIn': 'slideIn 0.5s ease-out',
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* Theme Variables */
+        .light {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+        }
+
+        .dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #e2e8f0;
+            --text-tertiary: #cbd5e1;
+            --border-color: #475569;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --glass-bg: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(148, 163, 184, 0.1);
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .dark body {
+            background: var(--dark-gradient);
+        }
+
+        .light body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #f5576c 60%, #4facfe 80%, #00f2fe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(2deg);
+            }
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 30px rgba(118, 75, 162, 0.8);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 3D Glass Morphism Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            z-index: 1;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) rotateX(5deg);
+            box-shadow: 0 20px 60px var(--shadow-color);
+        }
+
+        .glass-card-3d {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .glass-card-3d:hover {
+            transform: translateY(-10px) rotateX(8deg) rotateY(3deg);
+        }
+
+        /* Modern Buttons */
+        .btn-modern {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Subject Pills */
+        .subject-pill {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .subject-pill:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+
+        .subject-pill.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Paper Items */
+        .paper-item {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .paper-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+
+        /* Floating Elements */
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-element:nth-child(2n) {
+            animation-delay: -2s;
+        }
+
+        .floating-element:nth-child(3n) {
+            animation-delay: -4s;
+        }
+
+        /* Theme Toggle Switch */
+        .theme-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: var(--glass-bg);
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-switch-handle {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .dark .theme-switch-handle {
+            transform: translateX(30px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 10px;
+        }
+
+        /* Progress Bar 3D */
+        .progress-3d {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px var(--shadow-color);
+        }
+
+        .progress-fill-3d {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            transition: width 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill-3d::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 10px 10px 0 0;
+        }
+
+        /* Floating Chat Styles */
+        #aiChatToggle {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Chat Window Styles */
+        #aiChatWindow {
+            width: 380px;
+            height: 500px;
+            max-height: 80vh;
+        }
+
+        @media (max-width: 480px) {
+            #aiChatWindow {
+                width: calc(100vw - 32px);
+                height: calc(100vh - 32px);
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        /* Custom scrollbar for floating chat */
+        #floatingChatContainer::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #floatingChatContainer::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #floatingChatContainer::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        /* Quick action buttons */
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Chat message animations */
+        .chat-message-enter {
+            animation: messageSlideIn 0.3s ease-out;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Notification badge pulse */
+        #chatNotificationBadge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* AI Status indicator */
+        #aiStatus {
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* Modal styles */
+        #aiInsightsModal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #aiInsightsModal.show .glass-card {
+            transform: scale(1);
+        }
+
+        /* Insight cards in modal */
+        .insight-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Typing indicator for floating chat */
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            space-x: 1;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #666;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingAnimation {
+            0%, 80%, 100% { 
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .glass-card {
+                border-radius: 15px;
+                margin: 10px;
+            }
+
+            .glass-card:hover {
+                transform: translateY(-4px);
+            }
+
+            .subject-pill {
+                margin: 4px;
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+
+            .btn-modern {
+                padding: 10px 18px;
+                font-size: 14px;
+            }
+
+            .paper-item {
+                padding: 12px;
+                border-radius: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-card {
+                border-radius: 12px;
+                padding: 16px !important;
+            }
+
+            .subject-pill {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+        }
+
+        /* Chart Styling */
+        .chart-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        /* Input Styling */
+        input,
+        select {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        /* Performance Indicators */
+        .performance-excellent {
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .performance-good {
+            color: #3b82f6;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .performance-average {
+            color: #f59e0b;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .performance-poor {
+            color: #ef4444;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen transition-all duration-300">
+    <!-- Header with Theme Toggle and Logout Button -->
+    <header class="fixed top-0 left-0 right-0 z-50 p-4">
+        <div class="flex justify-between items-center max-w-7xl mx-auto">
+            <div class="theme-switch" id="themeToggle">
+                <div class="theme-switch-handle" id="themeHandle">
+                    <i class="fas fa-sun"></i>
+                </div>
+            </div>
+            <!-- Logout Button -->
+            <button id="logoutBtn" class="glass-card p-3 rounded-full hover:scale-110 transition-all duration-300">
+                <i class="fas fa-sign-out-alt text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container mx-auto max-w-7xl px-4 pt-20 pb-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 floating-element">
+            <h1
+                class="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 bg-clip-text text-transparent">
+                <i class="fas fa-chart-line mr-4"></i>
+                Marks Tracker
+            </h1>
+            <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                Track your academic progress with style and precision
+            </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card glass-card-3d p-6 text-center floating-element">
+                <div class="text-3xl mb-2"><i class="fas fa-book text-purple-500"></i></div>
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Subjects</h3>
+                <p id="totalSubjects" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="glass-card glass-card-3d p-6 text-center floating-element">
+                <div class="text-3xl mb-2"><i class="fas fa-trophy text-yellow-500"></i></div>
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Avg Mark</h3>
+                <p id="avgMark" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="glass-card glass-card-3d p-6 text-center floating-element">
+                <div class="text-3xl mb-2"><i class="fas fa-file-alt text-blue-500"></i></div>
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Papers</h3>
+                <p id="totalPapers" class="text-3xl font-bold">0</p>
+            </div>
+            <div class="glass-card glass-card-3d p-6 text-center floating-element">
+                <div class="text-3xl mb-2"><i class="fas fa-calendar-alt text-red-500"></i></div>
+                <h3 class="text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">A/L Countdown</h3>
+                <p id="countdown" class="text-lg font-bold text-red-500">Loading...</p>
+            </div>
+        </div>
+
+
+        <div id="aiChatToggle" class="fixed bottom-6 right-6 z-50">
+            <button class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group">
+                <i id="chatToggleIcon" class="fas fa-robot text-white text-xl group-hover:animate-bounce"></i>
+                <!-- Notification badge for new features -->
+                <div id="chatNotificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span class="text-white text-xs font-bold">!</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Floating AI Chat Window -->
+        <div id="aiChatWindow" class="fixed bottom-6 right-6 z-50 transform transition-all duration-300 scale-0 opacity-0 origin-bottom-right">
+            <div class="glass-card w-96 h-96 flex flex-col">
+                <!-- Chat Header -->
+                <div class="flex items-center justify-between p-4 border-b border-white/20">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                            <i class="fas fa-robot text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">AI Study Assistant</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <span id="aiStatus" class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                Online
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- AI Analysis Quick Button -->
+                        <button id="quickAnalysisBtn" class="p-2 rounded-lg hover:bg-white/20 transition-all" title="Get AI Analysis">
+                            <i class="fas fa-brain text-purple-500"></i>
+                        </button>
+                        <!-- Minimize Button -->
+                        <button id="minimizeChatBtn" class="p-2 rounded-lg hover:bg-white/20 transition-all" title="Minimize">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <!-- Close Button -->
+                        <button id="closeChatBtn" class="p-2 rounded-lg hover:bg-white/20 transition-all" title="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Container -->
+                <div id="floatingChatContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Welcome Message -->
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                        <div class="glass-card p-3 max-w-xs">
+                            <p class="text-sm">👋 Hi! I'm your AI study assistant. I can help you analyze your marks, track progress, and provide study tips. What would you like to know?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div id="quickActions" class="px-4 pb-2">
+                    <div class="flex flex-wrap gap-2">
+                        <button class="quick-action-btn" onclick="askQuickQuestion('How am I performing overall?')">
+                            📊 Performance
+                        </button>
+                        <button class="quick-action-btn" onclick="askQuickQuestion('Which subjects need more focus?')">
+                            🎯 Focus Areas
+                        </button>
+                        <button class="quick-action-btn" onclick="askQuickQuestion('Give me study tips')">
+                            💡 Study Tips
+                        </button>
+                        <button class="quick-action-btn" onclick="askQuickQuestion('Am I ready for A/L exams?')">
+                            🎓 A/L Ready?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-4 border-t border-white/20">
+                    <div class="flex items-center space-x-2">
+                        <input id="floatingChatInput" type="text" placeholder="Ask me anything about your studies..." 
+                            class="flex-1 p-3 rounded-xl bg-white/10 border border-white/20 text-sm focus:outline-none focus:border-purple-500 transition-all"
+                            onkeypress="if(event.key==='Enter') sendFloatingMessage()">
+                        <button id="sendFloatingChatBtn" class="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl hover:scale-105 transition-all" onclick="sendFloatingMessage()">
+                            <i class="fas fa-paper-plane text-white"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights Modal (triggered from chat) -->
+        <div id="aiInsightsModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+            <div class="glass-card p-6 max-w-4xl max-h-[80vh] overflow-y-auto m-4 transform scale-95 transition-all duration-300">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold flex items-center">
+                        <i class="fas fa-brain mr-3 text-purple-500"></i>
+                        AI Performance Analysis
+                    </h2>
+                    <button id="closeInsightsModal" class="p-2 rounded-lg hover:bg-white/20 transition-all">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div id="modalInsightsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Main Dashboard -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            <!-- Summary Section -->
+            <div class="xl:col-span-2 glass-card p-6 lg:p-8">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-chart-pie mr-3 text-purple-500"></i>
+                    Performance Overview
+                </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">Performance Level</h3>
+                            <p id="performance" class="text-3xl font-bold mb-4"></p>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-semibold">Progress to Target</h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">(75%)</span>
+                            </div>
+                            <div class="progress-3d">
+                                <div id="progressFill" class="progress-fill-3d"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Subject Section -->
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-plus-circle mr-3 text-green-500"></i>
+                    Add Subject
+                </h2>
+                <div class="space-y-4">
+                    <input id="subjectInput" type="text" placeholder="Enter subject name" class="w-full p-4 rounded-xl"
+                        aria-label="Subject name">
+                    <button id="addSubjectBtn" class="btn-modern w-full">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add Subject
+                    </button>
+                </div>
+
+                <h3 class="text-lg font-semibold mt-8 mb-4 flex items-center">
+                    <i class="fas fa-list mr-2 text-blue-500"></i>
+                    Your Subjects
+                </h3>
+                <div id="subjectList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Papers Section -->
+        <div id="papersSection" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" style="display: none;">
+            <div class="glass-card p-6">
+                <h2 id="addPaperTitle" class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-file-plus mr-3 text-green-500"></i>
+                    Add Paper
+                </h2>
+                <div class="space-y-4">
+                    <input id="paperInput" type="text" placeholder="Paper name" class="w-full p-4 rounded-xl"
+                        aria-label="Paper name">
+                    <div class="flex gap-4">
+                        <input id="markInput" type="number" placeholder="Mark" min="0" max="100"
+                            class="flex-1 p-4 rounded-xl" aria-label="Mark">
+                        <button id="addMarkBtn" class="btn-modern px-6">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h2 id="papersListTitle" class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-scroll mr-3 text-blue-500"></i>
+                    Papers
+                </h2>
+                <div class="max-h-80 overflow-y-auto">
+                    <div id="paperList" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: Edit Item Section (formerly Edit Modal) -->
+        <div id="editSection" class="glass-card p-6 mb-8 hidden">
+            <h2 id="editSectionTitle" class="text-xl font-bold mb-6 flex items-center"></h2>
+            <div id="editSubjectSection" class="space-y-4">
+                <label for="editSubjectInput" class="block text-sm font-medium">Subject Name</label>
+                <input id="editSubjectInput" type="text" class="w-full p-3 rounded-xl">
+            </div>
+            <div id="editPaperSection" class="space-y-4">
+                <label for="editPaperNameInput" class="block text-sm font-medium">Paper Name</label>
+                <input id="editPaperNameInput" type="text" class="w-full p-3 rounded-xl">
+                <label for="editMarkInput" class="block text-sm font-medium">Mark</label>
+                <input id="editMarkInput" type="number" class="w-full p-3 rounded-xl">
+            </div>
+            <div class="flex gap-4 justify-end mt-6">
+                <button id="deleteBtn"
+                    class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-xl">
+                    <i class="fas fa-trash mr-2"></i>Delete
+                </button>
+                <button id="saveEditBtn" class="btn-modern">
+                    <i class="fas fa-save mr-2"></i>Save
+                </button>
+                <button id="closeEditSectionBtn" class="bg-gray-500 text-white px-4 py-2 rounded-xl">
+                    Cancel
+                </button>
+            </div>
+        </div>
+
+        <!-- NEW: Confirm Clear Section (formerly Confirm Clear Modal) -->
+        <div id="confirmClearSection" class="glass-card p-6 w-full max-w-md mx-auto text-center mb-8 hidden">
+            <div class="text-6xl mb-4">⚠️</div>
+            <h2 id="confirmClearTitle" class="text-xl font-bold mb-4"></h2>
+            <p id="confirmClearParagraph" class="text-gray-600 dark:text-gray-300 mb-6"></p>
+            <div class="flex gap-4 justify-center">
+                <button id="cancelClearBtn" class="bg-gray-500 text-white px-6 py-2 rounded-xl">Cancel</button>
+                <button id="confirmClearActionBtn"
+                    class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-2 rounded-xl">
+                </button>
+            </div>
+        </div>
+
+        <!-- Trend Chart -->
+        <div class="glass-card p-6 lg:p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-chart-line mr-3 text-purple-500"></i>
+                Performance Trend
+            </h2>
+            <div class="chart-container">
+                <canvas id="trendChart" style="height: 400px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap justify-center gap-4">
+            <button id="clearBtn"
+                class="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition-all duration-300">
+                <i class="fas fa-trash mr-2"></i>
+                Clear All Data
+            </button>
+            <button id="saveChartsBtn"
+                class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition-all duration-300">
+                <i class="fas fa-download mr-2"></i>
+                Save Charts as Image
+            </button>
+        </div>
+    </div>
+    <h2 class="text-center text-gray-500 dark:text-gray-400">
+                Developed with ❤️ by Navanjana
+            </h2>
+    <div id="toast"
+        class="toast fixed bottom-4 right-4 p-4 rounded-xl opacity-0 transform translate-y-4 transition-all duration-300 z-50">
+    </div>
+    <script>
+        // Theme Management
+        const themeToggle = document.getElementById('themeToggle');
+        const themeHandle = document.getElementById('themeHandle');
+        const body = document.body;
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        body.className = savedTheme;
+        updateThemeHandle();
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            body.className = newTheme;
+            localStorage.setItem('theme', newTheme);
+            updateThemeHandle();
+
+            // Animate the switch
+            gsap.to(themeHandle, {
+                scale: 1.2,
+                duration: 0.1,
+                yoyo: true,
+                repeat: 1
+            });
+        });
+
+        function updateThemeHandle() {
+            if (body.classList.contains('dark')) {
+                themeHandle.innerHTML = '<i class="fas fa-moon"></i>';
+            } else {
+                themeHandle.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // Data & State
+        let subjects = [];
+        let selectedSubjectId = null;
+        let editContext = { mode: null, subjectId: null, paperId: null };
+        const targetMark = 75;
+
+        // DOM Elements
+        const elements = {
+            subjectInput: document.getElementById('subjectInput'),
+            addSubjectBtn: document.getElementById('addSubjectBtn'),
+            paperInput: document.getElementById('paperInput'),
+            markInput: document.getElementById('markInput'),
+            addMarkBtn: document.getElementById('addMarkBtn'),
+            subjectList: document.getElementById('subjectList'),
+            paperList: document.getElementById('paperList'),
+            papersSection: document.getElementById('papersSection'),
+            addPaperTitle: document.getElementById('addPaperTitle'),
+            papersListTitle: document.getElementById('papersListTitle'),
+            clearBtn: document.getElementById('clearBtn'),
+            countdown: document.getElementById('countdown'),
+            totalSubjects: document.getElementById('totalSubjects'),
+            avgMark: document.getElementById('avgMark'),
+            totalPapers: document.getElementById('totalPapers'),
+            performance: document.getElementById('performance'),
+            progressFill: document.getElementById('progressFill'),
+
+            editSection: document.getElementById('editSection'),
+            editSectionTitle: document.getElementById('editSectionTitle'),
+            editSubjectSection: document.getElementById('editSubjectSection'),
+            editPaperSection: document.getElementById('editPaperSection'),
+            editSubjectInput: document.getElementById('editSubjectInput'),
+            editPaperNameInput: document.getElementById('editPaperNameInput'),
+            editMarkInput: document.getElementById('editMarkInput'),
+            saveEditBtn: document.getElementById('saveEditBtn'),
+            deleteBtn: document.getElementById('deleteBtn'),
+            closeEditSectionBtn: document.getElementById('closeEditSectionBtn'),
+
+            confirmClearSection: document.getElementById('confirmClearSection'),
+            confirmClearTitle: document.getElementById('confirmClearTitle'),
+            confirmClearParagraph: document.getElementById('confirmClearParagraph'),
+            cancelClearBtn: document.getElementById('cancelClearBtn'),
+            confirmClearActionBtn: document.getElementById('confirmClearActionBtn'),
+
+            toast: document.getElementById('toast'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            saveChartsBtn: document.getElementById('saveChartsBtn'),
+        };
+
+        // Chart.js Setup
+        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || '#475569';
+        Chart.defaults.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border-color') || '#e2e8f0';
+
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                cutout: '60%',
+                elements: {
+                    arc: {
+                        borderRadius: 5
+                    }
+                }
+            }
+        });
+
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true,
+                            font: {
+                                family: 'Inter',
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.1)'
+                        }
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0.4,
+                        borderWidth: 3
+                    },
+                    point: {
+                        radius: 6,
+                        hoverRadius: 8,
+                        borderWidth: 2,
+                        backgroundColor: '#ffffff'
+                    }
+                }
+            }
+        });
+
+        function getRandomColor(index) {
+            const colors = [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(168, 85, 247, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(6, 182, 212, 0.8)',
+                'rgba(249, 115, 22, 0.8)'
+            ];
+            return colors[index % colors.length];
+        }
+
+        // Toast Function
+        const showToast = (message, type = 'success') => {
+            elements.toast.textContent = message;
+            elements.toast.className = `toast fixed bottom-4 right-4 p-4 rounded-xl opacity-0 transform translate-y-4 transition-all duration-300 z-50 ${type}`;
+
+            gsap.to(elements.toast, {
+                opacity: 1,
+                y: 0,
+                duration: 0.3,
+                ease: "back.out(1.7)"
+            });
+
+            setTimeout(() => {
+                gsap.to(elements.toast, {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.3
+                });
+            }, 3000);
+        };
+
+        // API Functions
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/subjects');
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login'; // Redirect to login if unauthorized
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                subjects = await response.json();
+                updateAllUI();
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+                showToast("Could not load data from server.", "error");
+            }
+        }
+
+        const updateAllUI = () => {
+            updateSubjectList();
+            updatePapersDisplay();
+            updateSummary();
+            updateTrendChart();
+        };
+
+        // UI Update Functions
+        function updateSubjectList() {
+            elements.subjectList.innerHTML = '';
+
+            // All Subjects button
+            const allBtn = document.createElement('div');
+            allBtn.className = `subject-pill flex items-center justify-between ${selectedSubjectId === null ? 'active' : ''}`;
+            allBtn.innerHTML = `
+            <span><i class="fas fa-globe mr-2"></i>All Subjects</span>
+        `;
+            allBtn.onclick = () => {
+                selectedSubjectId = null;
+                updateAllUI();
+                gsap.from(allBtn, { scale: 0.95, duration: 0.2 });
+            };
+            elements.subjectList.appendChild(allBtn);
+
+            subjects.forEach(subject => {
+                const div = document.createElement('div');
+                div.className = `subject-pill flex items-center justify-between ${selectedSubjectId === subject.id ? 'active' : ''}`;
+                div.innerHTML = `
+                <span><i class="fas fa-book mr-2"></i>${subject.name}</span>
+                <button class="text-sm p-1 rounded hover:bg-white hover:bg-opacity-20 transition-all" onclick="event.stopPropagation(); openEditSection('subject', ${subject.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            `;
+                div.onclick = () => {
+                    selectedSubjectId = subject.id;
+                    updateAllUI();
+                    gsap.from(div, { scale: 0.95, duration: 0.2 });
+                };
+                elements.subjectList.appendChild(div);
+            });
+        }
+
+        function updatePapersDisplay() {
+            if (selectedSubjectId) {
+                const subject = subjects.find(s => s.id === selectedSubjectId);
+                if (!subject) {
+                    console.error('Subject not found:', selectedSubjectId);
+                    return;
+                }
+
+                elements.papersSection.style.display = 'grid';
+
+                elements.addPaperTitle.innerHTML = `<i class="fas fa-file-plus mr-3 text-green-500"></i>Add Paper to ${subject.name}`;
+                elements.papersListTitle.innerHTML = `<i class="fas fa-scroll mr-3 text-blue-500"></i>Papers for ${subject.name}`;
+
+                // Clear the paper list first
+                elements.paperList.innerHTML = '';
+                
+                if (!subject.papers || subject.papers.length === 0) {
+                    elements.paperList.innerHTML = `
+                        <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-inbox text-4xl mb-4 opacity-50"></i>
+                            <p>No papers added yet</p>
+                        </div>
+                    `;
+                } else {
+                    subject.papers.forEach((paper, index) => {
+                        if (!paper || typeof paper.id === 'undefined' || typeof paper.name === 'undefined' || typeof paper.mark === 'undefined') {
+                            console.warn('Invalid paper structure:', paper);
+                            return;
+                        }
+
+                        const paperDiv = document.createElement('div');
+                        paperDiv.className = 'paper-item';
+
+                        const markColor = paper.mark >= 75 ? 'text-green-500' :
+                            paper.mark >= 60 ? 'text-blue-500' :
+                                paper.mark >= 40 ? 'text-yellow-500' : 'text-red-500';
+
+                        paperDiv.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                                        ${index + 1}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold">${paper.name}</h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Paper ${index + 1}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-right">
+                                        <div class="text-2xl font-bold ${markColor}">${paper.mark}%</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Score</div>
+                                    </div>
+                                    <button class="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 transition-all" onclick="event.stopPropagation(); openEditSection('paper', ${subject.id}, ${paper.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+
+                        elements.paperList.appendChild(paperDiv);
+                    });
+                }
+            } else {
+                elements.papersSection.style.display = 'none';
+            }
+        }
+
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Also update the fetchData function to ensure proper data structure
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/subjects');
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login';
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Fetched data:', data); // Debug log
+                
+                // Ensure each subject has a papers array
+                subjects = data.map(subject => ({
+                    ...subject,
+                    papers: subject.papers || []
+                }));
+                
+                console.log('Processed subjects:', subjects); // Debug log
+                updateAllUI();
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+                showToast("Could not load data from server.", "error");
+            }
+        }
+
+
+
+        function updateSummary() {
+            const totalSub = subjects.length;
+            const allPapers = subjects.flatMap(s => s.papers);
+            const totalPap = allPapers.length;
+            const totalMark = allPapers.reduce((sum, p) => sum + p.mark, 0);
+            const avg = totalPap ? (totalMark / totalPap) : 0;
+
+            // Animate counters
+            gsap.to(elements.totalSubjects, {
+                innerText: totalSub,
+                duration: 1,
+                snap: { innerText: 1 },
+                ease: "power2.out"
+            });
+            gsap.to(elements.avgMark, {
+                innerText: avg.toFixed(1),
+                duration: 1,
+                snap: { innerText: 0.1 },
+                ease: "power2.out"
+            });
+            gsap.to(elements.totalPapers, {
+                innerText: totalPap,
+                duration: 1,
+                snap: { innerText: 1 },
+                ease: "power2.out"
+            });
+
+            // Performance assessment
+            let performanceText, performanceClass;
+            if (avg >= 85) {
+                performanceText = 'Excellent';
+                performanceClass = 'performance-excellent';
+            } else if (avg >= 75) {
+                performanceText = 'Very Good';
+                performanceClass = 'performance-good';
+            } else if (avg >= 60) {
+                performanceText = 'Good';
+                performanceClass = 'performance-good';
+            } else if (avg >= 50) {
+                performanceText = 'Average';
+                performanceClass = 'performance-average';
+            } else {
+                performanceText = 'Needs Improvement';
+                performanceClass = 'performance-poor';
+            }
+
+            elements.performance.textContent = performanceText;
+            elements.performance.className = `text-3xl font-bold ${performanceClass}`;
+
+            // Progress bar animation
+            const progressPercent = Math.min((avg / targetMark) * 100, 100);
+            gsap.to(elements.progressFill, {
+                width: `${progressPercent}%`,
+                duration: 1.5,
+                ease: "power2.out"
+            });
+
+            updatePieChart();
+        }
+
+        function updatePieChart() {
+            const subjectAverages = subjects.map(s => {
+                const total = s.papers.reduce((sum, p) => sum + p.mark, 0);
+                return s.papers.length > 0 ? total / s.papers.length : 0;
+            }).filter(avg => avg > 0); // Only show subjects with papers
+
+            const subjectNames = subjects.filter(s => s.papers.length > 0).map(s => s.name);
+
+            pieChart.data.labels = subjectNames;
+            pieChart.data.datasets[0].data = subjectAverages;
+            pieChart.data.datasets[0].backgroundColor = subjectNames.map((_, i) => getRandomColor(i));
+
+            pieChart.update();
+        }
+
+        function updateTrendChart() {
+            trendChart.data.datasets = [];
+            trendChart.data.labels = [];
+
+            const displaySubjects = selectedSubjectId ?
+                [subjects.find(s => s.id === selectedSubjectId)] :
+                subjects.filter(s => s.papers.length > 0);
+
+            displaySubjects.forEach((subject, index) => {
+                if (subject && subject.papers.length > 0) {
+                    const labels = subject.papers.map((p, i) => `Paper ${i + 1}`);
+                    const data = subject.papers.map(p => p.mark);
+                    const color = getRandomColor(subjects.findIndex(s => s.id === subject.id));
+
+                    trendChart.data.datasets.push({
+                        label: subject.name,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color.replace('0.8', '0.1'),
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: color,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    });
+
+                    // Merge labels
+                    if (labels.length > trendChart.data.labels.length) {
+                        trendChart.data.labels = labels;
+                    }
+                }
+            });
+
+            trendChart.update();
+        }
+
+        function updateCountdown() {
+            const targetDate = new Date('2025-11-10T00:00:00');
+            const now = new Date();
+            const diff = targetDate - now;
+
+            if (diff > 0) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+
+                elements.countdown.innerHTML = `
+                <div class="grid grid-cols-4 gap-2 md:gap-4 text-center">
+                    <div class="bg-white/10 p-2 rounded-lg"><div class="text-xl md:text-2xl font-bold">${days}</div><div class="text-xs md:text-sm opacity-75">Days</div></div>
+                    <div class="bg-white/10 p-2 rounded-lg"><div class="text-xl md:text-2xl font-bold">${hours}</div><div class="text-xs md:text-sm opacity-75">Hours</div></div>
+                    <div class="bg-white/10 p-2 rounded-lg"><div class="text-xl md:text-2xl font-bold">${minutes}</div><div class="text-xs md:text-sm opacity-75">Minutes</div></div>
+                    <div class="bg-white/10 p-2 rounded-lg"><div class="text-xl md:text-2xl font-bold">${seconds}</div><div class="text-xs md:text-sm opacity-75">Seconds</div></div>
+                </div>
+            `;
+            } else {
+                elements.countdown.textContent = 'A/L Started!';
+            }
+        }
+
+        // --- SECTION DISPLAY FUNCTIONS (REPLACING MODALS) ---
+
+        // Function to hide all "modal" sections
+        const hideAllSections = () => {
+            elements.editSection.classList.add('hidden');
+            elements.confirmClearSection.classList.add('hidden');
+        };
+
+        // Function to open the Edit Section
+        function openEditSection(mode, subjectId, paperId = null) {
+            event.stopPropagation(); // Stop the click from bubbling up
+            hideAllSections(); // Hide other sections first
+            editContext = { mode, subjectId, paperId };
+
+            elements.editSubjectSection.style.display = mode === 'subject' ? 'block' : 'none';
+            elements.editPaperSection.style.display = mode === 'paper' ? 'block' : 'none';
+
+            if (mode === 'subject') {
+                const subject = subjects.find(s => s.id === subjectId);
+                elements.editSectionTitle.innerHTML = `<i class="fas fa-edit mr-3 text-purple-500"></i> Edit Subject: ${subject ? subject.name : 'N/A'}`;
+                elements.editSubjectInput.value = subject ? subject.name : '';
+            } else {
+                const subject = subjects.find(s => s.id === subjectId);
+                const paper = subject ? subject.papers.find(p => p.id === paperId) : null;
+                elements.editSectionTitle.innerHTML = `<i class="fas fa-edit mr-3 text-purple-500"></i> Edit Paper: ${paper ? paper.name : 'N/A'}`;
+                elements.editPaperNameInput.value = paper ? paper.name : '';
+                elements.editMarkInput.value = paper ? paper.mark : '';
+            }
+
+            elements.editSection.classList.remove('hidden'); // Show the section
+            gsap.from(elements.editSection, {
+                opacity: 0,
+                y: 30,
+                duration: 0.4,
+                ease: "back.out(1.7)"
+            });
+        }
+
+        // Function to open the Confirm Clear Section
+        function openConfirmClearSection(type, dataId = null) {
+            hideAllSections(); // Hide other sections first
+
+            elements.confirmClearSection.classList.remove('hidden');
+            gsap.from(elements.confirmClearSection, {
+                opacity: 0,
+                y: 30,
+                duration: 0.4,
+                ease: "back.out(1.7)"
+            });
+
+            // Reset onclick to prevent multiple handlers
+            elements.confirmClearActionBtn.onclick = null;
+
+            if (type === 'all') {
+                elements.confirmClearTitle.textContent = 'Are you sure?';
+                elements.confirmClearParagraph.textContent = 'This action will permanently delete all your data. This cannot be undone.';
+                elements.confirmClearActionBtn.innerHTML = 'Yes, Clear All';
+                elements.confirmClearActionBtn.onclick = async () => {
+                    try {
+                        // Delete all subjects one by one
+                        for (const subject of subjects) {
+                            const response = await fetch(`/api/subjects/${subject.id}`, { method: 'DELETE' });
+                            if (!response.ok) {
+                                throw new Error(`Failed to delete subject ${subject.name}`);
+                            }
+                        }
+                        await fetchData(); // Re-fetch data to update UI (should be empty)
+                        showToast("All data has been cleared!", "success");
+                        hideAllSections();
+                    } catch (e) {
+                        console.error("Error clearing all data:", e);
+                        showToast('Failed to clear all data.', 'error');
+                    }
+                };
+            } else if (type === 'subject') {
+                const { subjectId } = editContext;
+                const subjectToDelete = subjects.find(s => s.id === subjectId);
+                elements.confirmClearTitle.textContent = `Delete Subject: ${subjectToDelete ? subjectToDelete.name : 'Unknown'}`;
+                elements.confirmClearParagraph.textContent = `This will permanently delete the subject and all its associated papers. This action cannot be undone.`;
+                elements.confirmClearActionBtn.innerHTML = `Yes, Delete Subject`;
+                elements.confirmClearActionBtn.onclick = async () => {
+                    try {
+                        const response = await fetch(`/api/subjects/${subjectId}`, { method: 'DELETE' });
+                        if (!response.ok) {
+                            if (response.status === 401) window.location.href = '/login';
+                            throw new Error('Server error deleting subject');
+                        }
+                        if (selectedSubjectId === subjectId) {
+                            selectedSubjectId = null;
+                        }
+                        await fetchData();
+                        showToast(`Subject deleted`, "success");
+                        hideAllSections();
+                    } catch (e) {
+                        console.error("Error deleting subject:", e);
+                        showToast('Deletion failed', 'error');
+                    }
+                };
+            } else if (type === 'paper') {
+                const { subjectId, paperId } = editContext;
+                const subject = subjects.find(s => s.id === subjectId);
+                const paperToDelete = subject ? subject.papers.find(p => p.id === paperId) : null;
+
+                elements.confirmClearTitle.textContent = `Delete Paper: ${paperToDelete ? paperToDelete.name : 'Unknown'}`;
+                elements.confirmClearParagraph.textContent = `This will permanently delete the paper. This action cannot be undone.`;
+                elements.confirmClearActionBtn.innerHTML = `Yes, Delete Paper`;
+                elements.confirmClearActionBtn.onclick = async () => {
+                    try {
+                        const response = await fetch(`/api/papers/${paperId}`, { method: 'DELETE' });
+                        if (!response.ok) {
+                            if (response.status === 401) window.location.href = '/login';
+                            throw new Error('Server error deleting paper');
+                        }
+                        await fetchData();
+                        showToast(`Paper deleted`, "success");
+                        hideAllSections();
+                    } catch (e) {
+                        console.error("Error deleting paper:", e);
+                        showToast('Deletion failed', 'error');
+                    }
+                };
+            }
+        }
+
+        // --- Event Listeners ---
+
+        elements.closeEditSectionBtn.addEventListener('click', hideAllSections);
+        elements.cancelClearBtn.addEventListener('click', hideAllSections);
+
+        // Logout Button
+        elements.logoutBtn.addEventListener('click', () => {
+            window.location.href = '/logout'; // Redirect to Flask logout route
+        });
+
+        // Add Subject Button
+        elements.addSubjectBtn.addEventListener('click', async () => {
+            const subjectName = elements.subjectInput.value.trim();
+            if (subjectName) {
+                try {
+                    const response = await fetch('/api/subjects', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: subjectName })
+                    });
+                    if (!response.ok) {
+                        if (response.status === 401) window.location.href = '/login';
+                        throw new Error('Server error adding subject');
+                    }
+                    await fetchData(); // Re-fetch all data to update UI
+                    elements.subjectInput.value = '';
+                    showToast('Subject added!', 'success');
+                } catch (e) {
+                    console.error("Error adding subject:", e);
+                    showToast('Failed to add subject.', 'error');
+                }
+            } else {
+                showToast('Subject name cannot be empty.', 'error');
+            }
+        });
+
+        // Add Paper Button
+        elements.addMarkBtn.addEventListener('click', async () => {
+            if (!selectedSubjectId) {
+                showToast('Please select a subject first.', 'error');
+                return;
+            }
+
+            const paperName = elements.paperInput.value.trim();
+            const mark = parseInt(elements.markInput.value, 10);
+
+            if (!paperName || isNaN(mark) || mark < 0 || mark > 100) {
+                showToast('Please enter a valid paper name and a mark between 0-100.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/subjects/${selectedSubjectId}/papers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: paperName, mark: mark, date_taken: new Date().toISOString().split('T')[0] }) // Add current date
+                });
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login';
+                    throw new Error('Server error adding paper');
+                }
+                await fetchData(); // Re-fetch all data to update UI
+                elements.paperInput.value = '';
+                elements.markInput.value = '';
+                showToast('Paper added!', 'success');
+            } catch (e) {
+                console.error("Error adding paper:", e);
+                showToast('Failed to add paper.', 'error');
+            }
+        });
+
+        // Update the deleteBtn click handler to open the confirm section
+        elements.deleteBtn.addEventListener('click', () => {
+            openConfirmClearSection(editContext.mode);
+        });
+
+        // Update the clearBtn click handler to open the confirm section for all data
+        elements.clearBtn.addEventListener('click', () => {
+            openConfirmClearSection('all');
+        });
+
+        // Save Edit Button Handler
+        elements.saveEditBtn.addEventListener('click', async () => {
+            const { mode, subjectId, paperId } = editContext;
+            let url, payload;
+
+            if (mode === 'subject') {
+                const newName = elements.editSubjectInput.value.trim();
+                if (!newName) {
+                    showToast('Subject name cannot be empty', 'error');
+                    return;
+                }
+                url = `/api/subjects/${subjectId}`;
+                payload = { name: newName };
+            } else { // mode === 'paper'
+                const newPaperName = elements.editPaperNameInput.value.trim();
+                const newMark = parseInt(elements.editMarkInput.value, 10);
+                if (!newPaperName || isNaN(newMark) || newMark < 0 || newMark > 100) {
+                    showToast('Paper name and valid mark (0-100) are required', 'error');
+                    return;
+                }
+                url = `/api/papers/${paperId}`;
+                payload = { name: newPaperName, mark: newMark, date_taken: new Date().toISOString().split('T')[0] }; // Update date if needed
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login';
+                    throw new Error('Server error updating item');
+                }
+                await fetchData(); // Re-fetch all data to update UI
+                showToast(`${mode.charAt(0).toUpperCase() + mode.slice(1)} updated`, 'success');
+                hideAllSections();
+            } catch (e) {
+                console.error("Error saving edit:", e);
+                showToast('Update failed', 'error');
+            }
+        });
+
+        // Save Charts as Image Button Handler
+        elements.saveChartsBtn.addEventListener('click', () => {
+            const pieCanvas = document.getElementById('pieChart');
+            const trendCanvas = document.getElementById('trendChart');
+
+            if (pieCanvas && trendCanvas) {
+                // Save Pie Chart
+                const pieImage = pieCanvas.toDataURL('image/png');
+                const pieLink = document.createElement('a');
+                pieLink.href = pieImage;
+                pieLink.download = 'marks_tracker_pie_chart.png';
+                document.body.appendChild(pieLink);
+                pieLink.click();
+                document.body.removeChild(pieLink);
+
+                // Save Trend Chart
+                const trendImage = trendCanvas.toDataURL('image/png');
+                const trendLink = document.createElement('a');
+                trendLink.href = trendImage;
+                trendLink.download = 'marks_tracker_trend_chart.png';
+                document.body.appendChild(trendLink);
+                trendLink.click();
+                document.body.removeChild(trendLink);
+
+                showToast('Charts downloaded!', 'success');
+            } else {
+                showToast('Charts not found to download.', 'error');
+            }
+        });
+
+
+        // Enter key support
+        elements.subjectInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') elements.addSubjectBtn.click();
+        });
+
+        elements.paperInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') elements.markInput.focus();
+        });
+
+        elements.markInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') elements.addMarkBtn.click();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.floating-element').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+
+            fetchData(); // Load initial data from backend
+            updateCountdown();
+            setInterval(updateCountdown, 1000); // Update countdown every second
+
+            gsap.from('.floating-element', {
+                opacity: 0,
+                y: 50,
+                duration: 0.8,
+                stagger: 0.2,
+                ease: "power2.out"
+            });
+        });
+
+        // Handle theme changes for charts
+        new MutationObserver(() => {
+            const isDark = body.classList.contains('dark');
+            Chart.defaults.color = isDark ? '#e2e8f0' : '#475569';
+            Chart.defaults.borderColor = isDark ? '#475569' : '#e2e8f0';
+
+            trendChart.options.scales.y.grid.color = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.2)';
+            trendChart.options.scales.x.grid.color = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.2)';
+
+            pieChart.update();
+            trendChart.update();
+        }).observe(body, { attributes: true, attributeFilter: ['class'] });
+
+        // Floating AI Chat Functionality
+        let isChatOpen = false;
+        let isChatMinimized = false;
+
+        // DOM Elements for floating chat
+        const chatToggle = document.getElementById('aiChatToggle');
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatContainer = document.getElementById('floatingChatContainer');
+        const chatInput = document.getElementById('floatingChatInput');
+        const closeChatBtn = document.getElementById('closeChatBtn');
+        const minimizeChatBtn = document.getElementById('minimizeChatBtn');
+        const quickAnalysisBtn = document.getElementById('quickAnalysisBtn');
+        const chatNotificationBadge = document.getElementById('chatNotificationBadge');
+        const insightsModal = document.getElementById('aiInsightsModal');
+        const closeInsightsModal = document.getElementById('closeInsightsModal');
+
+        // Initialize floating chat
+        function initFloatingChat() {
+            // Hide notification badge after first interaction
+            setTimeout(() => {
+                if (chatNotificationBadge) {
+                    chatNotificationBadge.style.display = 'none';
+                }
+            }, 5000);
+
+            // Toggle chat window
+            chatToggle.addEventListener('click', toggleChat);
+            closeChatBtn.addEventListener('click', closeChat);
+            minimizeChatBtn.addEventListener('click', minimizeChat);
+            quickAnalysisBtn.addEventListener('click', showAIInsightsModal);
+            closeInsightsModal.addEventListener('click', hideAIInsightsModal);
+
+            // Close modal when clicking outside
+            insightsModal.addEventListener('click', (e) => {
+                if (e.target === insightsModal) {
+                    hideAIInsightsModal();
+                }
+            });
+        }
+
+        function toggleChat() {
+            if (isChatOpen) {
+                closeChat();
+            } else {
+                openChat();
+            }
+        }
+
+        function openChat() {
+            isChatOpen = true;
+            isChatMinimized = false;
+            chatNotificationBadge.style.display = 'none';
+            
+            // Animate chat window opening
+            gsap.to(chatWindow, {
+                scale: 1,
+                opacity: 1,
+                duration: 0.3,
+                ease: "back.out(1.7)"
+            });
+            
+            // Hide the toggle button
+            gsap.to(chatToggle, {
+                scale: 0,
+                opacity: 0,
+                duration: 0.2
+            });
+            
+            // Focus on input
+            setTimeout(() => {
+                chatInput.focus();
+            }, 300);
+        }
+
+        function closeChat() {
+            isChatOpen = false;
+            isChatMinimized = false;
+            
+            // Animate chat window closing
+            gsap.to(chatWindow, {
+                scale: 0,
+                opacity: 0,
+                duration: 0.2,
+                ease: "power2.in"
+            });
+            
+            // Show the toggle button
+            gsap.to(chatToggle, {
+                scale: 1,
+                opacity: 1,
+                duration: 0.3,
+                delay: 0.1
+            });
+        }
+
+        function minimizeChat() {
+            isChatMinimized = true;
+            
+            // Animate to minimize
+            gsap.to(chatWindow, {
+                scale: 0.1,
+                opacity: 0.5,
+                transformOrigin: "bottom right",
+                duration: 0.3
+            });
+            
+            // Show toggle button
+            gsap.to(chatToggle, {
+                scale: 1,
+                opacity: 1,
+                duration: 0.3
+            });
+            
+            // Change toggle icon
+            document.getElementById('chatToggleIcon').className = 'fas fa-comment text-white text-xl group-hover:animate-bounce';
+        }
+
+        // Enhanced message sending for floating chat
+        async function sendFloatingMessage() {
+            const input = document.getElementById('floatingChatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addFloatingMessage(message, 'user');
+            input.value = '';
+            
+            // Add typing indicator
+            const typingId = addFloatingTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login';
+                    throw new Error('Chat failed');
+                }
+                
+                const data = await response.json();
+                
+                // Remove typing indicator and add AI response
+                removeFloatingTypingIndicator(typingId);
+                addFloatingMessage(data.response, 'ai');
+                
+            } catch (error) {
+                console.error('Chat Error:', error);
+                removeFloatingTypingIndicator(typingId);
+                addFloatingMessage('Sorry, I encountered an error. Please try again. 😔', 'ai');
+            }
+        }
+
+        function addFloatingMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message-enter';
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3 justify-end mb-3">
+                        <div class="glass-card p-3 max-w-[250px] bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl">
+                            <p class="text-sm break-words">${message}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-white text-xs"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3 mb-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-white text-xs"></i>
+                        </div>
+                        <div class="glass-card p-3 max-w-[250px] rounded-tr-2xl rounded-tl-2xl rounded-br-2xl">
+                            <p class="text-sm break-words">${message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addFloatingTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            const typingId = 'floating-typing-' + Date.now();
+            typingDiv.id = typingId;
+            typingDiv.innerHTML = `
+                <div class="flex items-start space-x-3 mb-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-white text-xs"></i>
+                    </div>
+                    <div class="glass-card p-3">
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return typingId;
+        }
+
+        function removeFloatingTypingIndicator(typingId) {
+            const typingDiv = document.getElementById(typingId);
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
+
+        function askQuickQuestion(question) {
+            if (!isChatOpen) {
+                openChat();
+                setTimeout(() => {
+                    document.getElementById('floatingChatInput').value = question;
+                    sendFloatingMessage();
+                }, 300);
+            } else {
+                document.getElementById('floatingChatInput').value = question;
+                sendFloatingMessage();
+            }
+        }
+
+        // AI Insights Modal Functions
+        async function showAIInsightsModal() {
+            insightsModal.classList.add('show');
+            
+            // Show loading in modal
+            document.getElementById('modalInsightsContent').innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-purple-500 mb-4"></i>
+                    <p class="text-lg">Analyzing your performance...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/ai/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) window.location.href = '/login';
+                    throw new Error('AI analysis failed');
+                }
+
+                const data = await response.json();
+                displayModalInsights(data.analysis);
+                
+            } catch (error) {
+                console.error('AI Analysis Error:', error);
+                document.getElementById('modalInsightsContent').innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                        <p class="text-lg">Failed to load AI analysis. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function hideAIInsightsModal() {
+            insightsModal.classList.remove('show');
+        }
+
+        function displayModalInsights(analysis) {
+            try {
+                let parsedAnalysis;
+                try {
+                    parsedAnalysis = JSON.parse(analysis);
+                } catch {
+                    parsedAnalysis = {
+                        summary: analysis.substring(0, 300) + '...',
+                        strengths: 'Analysis completed successfully.',
+                        weaknesses: 'Areas for improvement identified.',
+                        recommendations: 'Personalized recommendations provided.',
+                        study_tips: 'Study tips included in analysis.'
+                    };
+                }
+
+                document.getElementById('modalInsightsContent').innerHTML = `
+                    <div class="insight-card">
+                        <h3 class="font-semibold mb-3 flex items-center text-lg">
+                            <i class="fas fa-chart-line mr-2 text-green-500"></i>
+                            Performance Summary
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">${parsedAnalysis.summary || 'Performance analysis completed.'}</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3 class="font-semibold mb-3 flex items-center text-lg">
+                            <i class="fas fa-star mr-2 text-yellow-500"></i>
+                            Your Strengths
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">${parsedAnalysis.strengths || 'Strengths identified in your performance.'}</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3 class="font-semibold mb-3 flex items-center text-lg">
+                            <i class="fas fa-target mr-2 text-orange-500"></i>
+                            Areas to Focus
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">${parsedAnalysis.weaknesses || 'Areas for improvement noted.'}</p>
+                    </div>
+                    <div class="insight-card">
+                        <h3 class="font-semibold mb-3 flex items-center text-lg">
+                            <i class="fas fa-lightbulb mr-2 text-blue-500"></i>
+                            Recommendations
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">${parsedAnalysis.recommendations || 'Personalized recommendations provided.'}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error displaying modal insights:', error);
+                document.getElementById('modalInsightsContent').innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-exclamation-triangle text-4xl text-orange-500 mb-4"></i>
+                        <p class="text-lg">Analysis completed but formatting failed. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initFloatingChat();
+            
+            // Add welcome message after a short delay
+            setTimeout(() => {
+                if (!isChatOpen) {
+                    // Show notification badge to indicate AI assistant is available
+                    if (chatNotificationBadge) {
+                        chatNotificationBadge.style.display = 'flex';
+                    }
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+
+</html>
