@@ -21,7 +21,7 @@ A Flask-based web application for tracking student marks and analyzing academic 
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/Marks_APP.git
+git clone https://github.com/Navanjana2005/Marks_App.git
 cd Marks_APP
 ```
 
